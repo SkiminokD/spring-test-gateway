@@ -6,14 +6,22 @@ spring:
     name: gateway
 
   cloud:
+    loadbalancer:
+      ribbon:
+        # Added only for better readability
+        enabled: false
+    consul:
+      enabled: true
+      discovery: # Get only services that are passing the health check
+        query-passing: true
     gateway:
       routes:
         - id: multiplication
-          uri: http://localhost:8080/
+          uri: lb://multiplication/
           predicates:
             - Path=/challenges/**,/attempts,/attempts/**,/users/**
         - id: gamification
-          uri: http://localhost:8081/
+          uri: lb://gamification/
           predicates:
             - Path=/leaders
       globalcors:
@@ -26,7 +34,13 @@ spring:
               - "GET"
               - "POST"
               - "OPTIONS"
+default-filters:
+  - name: Retry
+    # In case the gateway fails to proxy a request to a service, we want it to retry a few times
+    args:
+      retries: 3
+      methods: GET, POST
 # route config
-logging:
-  level:
-    org.springframework.cloud.gateway.handler.predicate: trace
+#logging:
+#  level:
+#    org.springframework.cloud.gateway.handler.predicate: trace
